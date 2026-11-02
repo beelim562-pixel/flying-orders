@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sunshine Cafe — Flying Orders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1F2A44; --muted: #5B6B88; --sun: #FFD166;
+      --r: #E53935; --y: #FDD835; --b: #1E88E5; --g: #43A047;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: "Fredoka", "Noto Sans TC", Arial, sans-serif;
+      color: var(--ink); min-height: 100dvh;
+      background: linear-gradient(#B3E5FC, #FFF8E1 60%);
+    }
+    button { font-family: inherit; cursor: pointer; }
+    button:focus-visible { outline: 4px solid var(--sun); outline-offset: 3px; }
+    .app { max-width: 980px; margin: 0 auto; padding: 10px 10px 28px; }
+    header.bar {
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(90deg, #1565C0, #42A5F5);
+      color: #fff; border-radius: 20px; padding: 10px 12px; margin-bottom: 10px;
+      box-shadow: 0 6px 0 #0D47A1;
+    }
+    header.bar h1 { font-size: 1.1rem; margin: 0; }
+    header.bar p { margin: 2px 0 0; font-size: .8rem; color: #FFECB3; }
+    .grow { flex: 1; }
+    .icon-btn {
+      min-width: 52px; min-height: 52px; border-radius: 14px;
+      border: 3px solid #fff; background: #0D47A1; color: #fff; font-size: 1.25rem;
+    }
+    .screen { display: none; }
+    .screen.on { display: block; }
+    .en { font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 700; margin: 8px 0 4px; }
+    .zh { font-size: .92rem; color: var(--muted); margin: 0 0 10px; }
+    .hero { text-align: center; }
+    .big {
+      display: block; width: 100%; min-height: 66px; margin: 8px 0; border: 0; border-radius: 20px;
+      background: var(--sun); color: #5C3A21; font-size: 1.25rem; font-weight: 700;
+      box-shadow: 0 5px 0 #C9A227;
+    }
+    .big:disabled { opacity: .4; box-shadow: none; }
+    .big.blue { background: #1E88E5; color: #fff; box-shadow: 0 5px 0 #1565C0; }
+    .replay {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; min-height: 60px; margin: 6px 0 10px; border: 4px solid #1565C0;
+      border-radius: 16px; background: #E3F2FD; font-size: 1.15rem; font-weight: 700; color: #1565C0;
+    }
+    .tokens { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 420px; margin: 0 auto 12px; }
+    .tok {
+      border: 4px solid #fff; background: #fff; border-radius: 20px; padding: 12px;
+      box-shadow: 0 5px 0 rgba(0,0,0,.08);
+    }
+    .tok.on { outline: 4px solid #43A047; }
+    .tok svg { width: 70px; height: 70px; display: block; margin: 0 auto; }
+    .turn { text-align: center; background: #fff; border-radius: 16px; padding: 8px; font-weight: 700; margin-bottom: 8px; }
+    .hint { text-align: center; font-weight: 700; color: #1565C0; min-height: 1.4em; }
+    .board-wrap {
+      background: #fff; border: 6px solid #1565C0; border-radius: 16px; padding: 6px;
+      box-shadow: 0 8px 0 #0D47A1;
+    }
+    .sky { width: 100%; max-width: 680px; margin: 0 auto; display: block; }
+    .dice-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+    .dice {
+      width: 84px; height: 84px; border-radius: 18px; border: 5px solid #1565C0;
+      background: #fff; font-size: 2.4rem; font-weight: 700; color: #1565C0;
+    }
+    .dice.spin { animation: pop .3s ease; }
+    @keyframes pop { 0% { transform: scale(.8) rotate(-12deg); } 100% { transform: scale(1); } }
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(13,71,161,.45);
+      place-items: center; padding: 14px; z-index: 40;
+    }
+    .modal.on { display: grid; }
+    .card {
+      background: #fff; border-radius: 26px; padding: 16px 12px; max-width: 480px; width: 100%;
+      text-align: center;
+    }
+    .q-svg { width: min(220px, 78vw); height: auto; margin: 4px auto; display: block; }
+    .q-emoji { font-size: 2.6rem; line-height: 1; margin: 4px 0 2px; }
+    .choice {
+      display: flex; align-items: center; gap: 10px; width: 100%; min-height: 64px; margin: 8px 0; border: 4px solid #BBDEFB;
+      border-radius: 16px; background: #FAFDFF; font-size: 1.12rem; font-weight: 700; padding: 8px 10px; text-align: left;
+    }
+    .choice .ico { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+    .choice .c-txt { flex: 1; }
+    .choice .c-zh { display: block; font-size: .82rem; color: var(--muted); }
+    .choice.ok { border-color: #2A9D8F; background: #eaf7f3; }
+    .choice.bad { border-color: #C1121F; background: #fde8e8; }
+    .fb { min-height: 1.3em; font-weight: 700; }
+    .plane { cursor: pointer; }
+    .plane.can { filter: drop-shadow(0 0 7px #FFD166); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="bar">
+      <svg width="44" height="44" viewBox="0 0 32 32"><path d="M16 3 L20 14 H29 L22 18 L26 28 L16 22 L6 28 L10 18 L3 14 H12Z" fill="#FFD166" stroke="#0D47A1"/></svg>
+      <div class="grow">
+        <h1>Sunshine Cafe</h1>
+        <p>Flying Orders · 飛行棋落 order</p>
+      </div>
+      <button class="icon-btn" id="speakBtn" type="button">🔊</button>
+      <button class="icon-btn" id="muteBtn" type="button">🔈</button>
+    </header>
+
+    <section id="title" class="screen on hero">
+      <p class="en">Flying chess + cafe orders</p>
+      <p class="zh">2–4 人。任何點數都作出機。起飛位有棋就揀郁邊隻。</p>
+      <button class="big" id="goPick" type="button">Pick a colour · 揀顏色</button>
+    </section>
+
+    <section id="pick" class="screen hero">
+      <p class="en">Pick your colour.</p>
+      <p class="zh">2 人就可以開始。每人 4 架飛機。</p>
+      <div class="tokens" id="tokenBox"></div>
+      <p class="zh" id="pickCount">0 / 2–4</p>
+      <button class="big" id="startBtn" type="button" disabled>Let's fly · 開始</button>
+    </section>
+
+    <section id="play" class="screen">
+      <div class="turn" id="turnBar"></div>
+      <p class="hint" id="hint"></p>
+      <div class="board-wrap">
+        <svg class="sky" id="sky" viewBox="0 0 520 520" role="img" aria-label="Flying chess"></svg>
+      </div>
+      <div class="dice-row">
+        <button class="dice" id="diceBtn" type="button">🎲</button>
+        <button class="big blue" id="rollBtn" type="button" style="width:auto;min-width:170px;margin:0">Roll · 擲骰</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="qModal" class="modal">
+    <div class="card">
+      <p class="en" id="qEn" style="font-size:1.35rem"></p>
+      <p class="zh" id="qZh"></p>
+      <div id="qArt"></div>
+      <button class="replay" id="replayBtn" type="button">🔊 Replay · 再聽一次</button>
+      <div id="qOpts"></div>
+      <p class="fb" id="qFb"></p>
+    </div>
+  </div>
+  <div id="winModal" class="modal">
+    <div class="card">
+      <p class="en" id="winEn">You win!</p>
+      <p class="zh" id="winZh">四架飛機都到終點！</p>
+      <button class="big" id="againBtn" type="button">Play again · 再玩</button>
+    </div>
+  </div>
+
+  <script>
+    const LOOP = 48, HOME_LEN = 6;
+    const PAL = { y: "#FDD835", b: "#1E88E5", g: "#43A047", r: "#E53935" };
+    const CYCLE = ["g", "r", "y", "b"];
+    const TEAMS = [
+      { id: "g", en: "Green", zh: "綠", color: PAL.g, start: 0, hangar: 0 },
+      { id: "r", en: "Red", zh: "紅", color: PAL.r, start: 13, hangar: 1 },
+      { id: "y", en: "Yellow", zh: "黃", color: PAL.y, start: 26, hangar: 2 },
+      { id: "b", en: "Blue", zh: "藍", color: PAL.b, start: 39, hangar: 3 }
+    ];
+    const FLY = { 4: 28, 17: 41, 30: 6, 43: 19 };
+    const DRINKS = [
+      { key: "lemon tea", zh: "檸檬茶" },
+      { key: "milk tea", zh: "奶茶" },
+      { key: "tea", zh: "茶" },
+      { key: "coffee", zh: "咖啡" }
+    ];
+    const QTYPE = ["staff", "order", "temp", "place", "straw"];
+
+    let muted = false, lastSpeak = "";
+    let players = [];
+    let turn = 0, dice = 0, moving = false, extras = 0, waitPick = false;
+
+    const loopXY = (i) => {
+      i = ((i % LOOP) + LOOP) % LOOP;
+      const a = 70, b = 450, step = (b - a) / 11;
+      if (i < 12) return [a + i * step, a];
+      if (i < 24) return [b, a + (i - 12) * step];
+      if (i < 36) return [b - (i - 24) * step, b];
+      return [a, b - (i - 36) * step];
+    };
+    const homeXY = (tid, h) => {
+      const c = 260;
+      const t = h / (HOME_LEN - 1 || 1);
+      const ends = { g: [c - 90, c], r: [c, c - 90], y: [c + 90, c], b: [c, c + 90] };
+      const [ex, ey] = ends[tid];
+      return [ex + (c - ex) * (h + 1) / (HOME_LEN + 1), ey + (c - ey) * (h + 1) / (HOME_LEN + 1)];
+    };
+    const hangarXY = (hi, k) => {
+      const bases = [[70, 70], [450, 70], [450, 450], [70, 450]];
+      const [cx, cy] = bases[hi];
+      const ox = (k % 2) ? 18 : -18, oy = (k < 2) ? -18 : 18;
+      return [cx + ox, cy + oy];
+    };
+    const sqColor = (i) => CYCLE[((i % LOOP) + LOOP) % LOOP % 4];
+    const planePath = (fill) =>
+      `<path d="M0 -12 L5 2 H12 L4 6 L7 14 L0 8 L-7 14 L-4 6 L-12 2 H-5Z" fill="${fill}" stroke="#333" stroke-width="1.2"/>`;
+
+    const say = (t) => {
+      lastSpeak = t;
+      if (muted || !("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = "en-GB"; u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    };
+    const show = (id) => {
+      document.querySelectorAll(".screen").forEach((s) => s.classList.remove("on"));
+      document.getElementById(id).classList.add("on");
+    };
+    const shuffle = (a) => {
+      const b = a.slice();
+      for (let i = b.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [b[i], b[j]] = [b[j], b[i]];
+      }
+      return b;
+    };
+
+    const locKey = (p) => p.zone + ":" + p.i;
+    const piecesAt = (zone, i, except) => {
+      const out = [];
+      players.forEach((pl) => pl.pcs.forEach((pc) => {
+        if (except && pc === except) return;
+        if (pc.done) return;
+        if (pc.zone === zone && pc.i === i) out.push(pc);
+      }));
+      return out;
+    };
+    const stackSize = (list, tid) => list.filter((p) => p.tid === tid).length;
+
+    const drinkArt = (key, iced) => {
+      const ice = iced ? `<rect x="66" y="34" width="11" height="11" rx="2" fill="#E6F6FF"/><rect x="82" y="42" width="11" height="11" rx="2" fill="#CDEBFA"/>` : `<path d="M70 22 C70 12 90 12 90 22" fill="none" stroke="#bbb" stroke-width="3"/>`;
+      const fill = key === "coffee" ? "#6D4C41" : key === "milk tea" ? "#C9842A" : key === "lemon tea" ? "#E8C547" : "#A16207";
+      return `<svg class="q-svg" viewBox="0 0 200 120"><rect width="200" height="120" rx="16" fill="${iced ? "#E3F2FD" : "#FFF8E1"}"/>
+        <path d="M78 28 L84 92 Q100 104 116 92 L122 28Z" fill="${fill}" stroke="#5C3A21" stroke-width="3"/>
+        ${ice}
+        ${key === "lemon tea" ? `<circle cx="100" cy="70" r="8" fill="#F5C518" stroke="#D4A017"/>` : ""}
+        ${key === "milk tea" ? `<ellipse cx="100" cy="36" rx="18" ry="5" fill="#fff" opacity=".7"/>` : ""}
+        <text x="100" y="114" text-anchor="middle" font-size="13" font-weight="700" fill="#5C3A21">${iced ? "🧊 iced" : "♨️ hot"}</text></svg>`;
+    };
+    const staffArt = () => `<div class="q-emoji">🧑‍🍳</div>
+      <svg class="q-svg" viewBox="0 0 200 110"><rect width="200" height="110" rx="16" fill="#FFF3E0"/>
+      <circle cx="70" cy="42" r="18" fill="#F5D0B0"/><ellipse cx="70" cy="84" rx="24" ry="18" fill="#5C3A21"/>
+      <rect x="48" y="72" width="44" height="8" fill="#FFD166"/>
+      <text x="145" y="58" text-anchor="middle" font-size="15" font-weight="700" fill="#1565C0">How can I</text>
+      <text x="145" y="78" text-anchor="middle" font-size="15" font-weight="700" fill="#1565C0">help you?</text></svg>`;
+    const bagArt = () => `<div class="q-emoji">🛍️</div>
+      <svg class="q-svg" viewBox="0 0 200 110"><rect width="200" height="110" rx="16" fill="#FFE0B2"/>
+      <path d="M70 40 H130 L122 92 H78Z" fill="#E07A5F"/><rect x="92" y="28" width="16" height="16" fill="#5C3A21"/>
+      <text x="100" y="70" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">take away</text></svg>`;
+    const chairArt = () => `<div class="q-emoji">🪑</div>
+      <svg class="q-svg" viewBox="0 0 200 110"><rect width="200" height="110" rx="16" fill="#E8F5E9"/>
+      <rect x="68" y="48" width="64" height="12" rx="3" fill="#8D5B4C"/>
+      <rect x="78" y="60" width="10" height="28" fill="#5C3A21"/><rect x="112" y="60" width="10" height="28" fill="#5C3A21"/>
+      <text x="100" y="28" text-anchor="middle" font-size="14" font-weight="700" fill="#2E7D32">stay here</text></svg>`;
+    const strawArt = (need) => `<div class="q-emoji">${need ? "🥤" : "🙅"}</div>
+      <svg class="q-svg" viewBox="0 0 200 110"><rect width="200" height="110" rx="16" fill="#E3F2FD"/>
+      <path d="M88 18 L94 78" stroke="#90CAF9" stroke-width="7" stroke-linecap="round"/>
+      <path d="M78 70 L84 100 Q100 110 116 100 L122 70Z" fill="#C9842A" stroke="#5C3A21" stroke-width="3"/>
+      <text x="100" y="48" text-anchor="middle" font-size="14" font-weight="700" fill="#1565C0">${need ? "I need a straw" : "No, thank you"}</text></svg>`;
+
+    const makeQ = () => {
+      const type = QTYPE[Math.floor(Math.random() * QTYPE.length)];
+      if (type === "staff") {
+        return {
+          en: "👋 Staff says…", zh: "職員講邊句？", art: staffArt(),
+          speak: "How can I help you?",
+          opts: [
+            { en: "How can I help you?", zh: "有咩可以幫到你？", ok: true, ico: "🧑‍🍳" },
+            { en: "I'd like to have a cup of tea.", zh: "客人點餐", ok: false, ico: "🙋" }
+          ]
+        };
+      }
+      if (type === "order") {
+        const d = DRINKS[Math.floor(Math.random() * DRINKS.length)];
+        const w = DRINKS.find((x) => x.key !== d.key);
+        const line = "I'd like to have a cup of " + d.key + ".";
+        const ico = { "lemon tea": "🍋", "milk tea": "🥛", tea: "🍵", coffee: "☕" };
+        return {
+          en: "🥤 What does the customer say?", zh: "客人點講？",
+          art: `<div class="q-emoji">${ico[d.key] || "🥤"}</div>` + drinkArt(d.key, false),
+          speak: line,
+          opts: [
+            { en: line, zh: "我想要一杯" + d.zh + "。", ok: true, ico: ico[d.key] },
+            { en: "I'd like to have a cup of " + w.key + ".", zh: "我想要一杯" + w.zh + "。", ok: false, ico: ico[w.key] }
+          ]
+        };
+      }
+      if (type === "temp") {
+        const iced = Math.random() < 0.5;
+        const d = DRINKS[Math.floor(Math.random() * 2)];
+        const line = "I'd like to have a cup of " + (iced ? "iced " : "hot ") + d.key + ".";
+        return {
+          en: iced ? "🧊 Hot or iced?" : "♨️ Hot or iced?", zh: "熱定凍？",
+          art: `<div class="q-emoji">${iced ? "🧊" : "♨️"}</div>` + drinkArt(d.key, iced),
+          speak: line,
+          opts: [
+            { en: "iced", zh: "凍", ok: iced, ico: "🧊" },
+            { en: "hot", zh: "熱", ok: !iced, ico: "♨️" }
+          ]
+        };
+      }
+      if (type === "place") {
+        const away = Math.random() < 0.5;
+        return {
+          en: away ? "🛍️ Take away or stay here?" : "🪑 Take away or stay here?",
+          zh: "外賣定堂食？",
+          art: away ? bagArt() : chairArt(),
+          speak: away ? "Take away." : "Stay here.",
+          opts: [
+            { en: "Take away.", zh: "外賣／帶走", ok: away, ico: "🛍️" },
+            { en: "Stay here.", zh: "堂食／留喺度", ok: !away, ico: "🪑" }
+          ]
+        };
+      }
+      const need = Math.random() < 0.6;
+      return {
+        en: "🥤 Does the customer need a straw?", zh: "要唔要飲管？",
+        art: strawArt(need),
+        speak: need ? "I need a straw." : "No, thank you.",
+        opts: [
+          { en: "I need a straw.", zh: "我要飲管。", ok: need, ico: "🥤" },
+          { en: "No, thank you.", zh: "唔使，多謝。", ok: !need, ico: "🙅" }
+        ]
+      };
+    };
+
+    const pcXY = (pc, k) => {
+      if (pc.done || pc.zone === "hangar") {
+        const team = TEAMS.find((t) => t.id === pc.tid);
+        return hangarXY(team.hangar, pc.slot);
+      }
+      if (pc.zone === "home") return homeXY(pc.tid, pc.i);
+      const [x, y] = loopXY(pc.i);
+      return [x + (k % 2) * 6 - 3, y + (k < 2 ? -3 : 3)];
+    };
+
+    const drawBoard = () => {
+      const sq = [];
+      for (let i = 0; i < LOOP; i++) {
+        const [x, y] = loopXY(i);
+        const col = PAL[sqColor(i)];
+        const fly = FLY[i] != null;
+        sq.push(`<rect x="${x - 16}" y="${y - 16}" width="32" height="32" rx="4" fill="${col}" stroke="#333" stroke-width="1"/>
+          <circle cx="${x}" cy="${y}" r="9" fill="#fff"/>
+          ${fly ? `<circle cx="${x}" cy="${y}" r="4" fill="${col}"/>` : ""}`);
+      }
+      Object.keys(FLY).forEach((a) => {
+        const b = FLY[a];
+        if (Number(a) > b) return;
+        const [x1, y1] = loopXY(+a), [x2, y2] = loopXY(b);
+        sq.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#333" stroke-width="2" stroke-dasharray="6 5" opacity=".55"/>`);
+      });
+      ["g", "r", "y", "b"].forEach((tid) => {
+        for (let h = 0; h < HOME_LEN; h++) {
+          const [x, y] = homeXY(tid, h);
+          sq.push(`<circle cx="${x}" cy="${y}" r="10" fill="#fff" stroke="${PAL[tid]}" stroke-width="3"/>`);
+        }
+      });
+      const arrows = `
+        <polygon points="260,260 210,245 210,275" fill="${PAL.g}"/>
+        <polygon points="260,260 245,210 275,210" fill="${PAL.r}"/>
+        <polygon points="260,260 310,245 310,275" fill="${PAL.y}"/>
+        <polygon points="260,260 245,310 275,310" fill="${PAL.b}"/>`;
+      const bases = TEAMS.map((t) => {
+        const [cx, cy] = hangarXY(t.hangar, 0);
+        const [bx, by] = [[70,70],[450,70],[450,450],[70,450]][t.hangar];
+        return `<rect x="${bx - 42}" y="${by - 42}" width="84" height="84" rx="8" fill="#fff" stroke="${t.color}" stroke-width="4"/>
+          ${[0,1,2,3].map((k) => {
+            const [x, y] = hangarXY(t.hangar, k);
+            return `<circle cx="${x}" cy="${y}" r="13" fill="${t.color}"/>`;
+          }).join("")}`;
+      }).join("");
+      const planes = [];
+      players.forEach((pl) => {
+        pl.pcs.forEach((pc, k) => {
+          const [x, y] = pcXY(pc, k);
+          const rot = pc.done ? 180 : 0;
+          const can = waitPick && movable(pc) ? "can" : "";
+          planes.push(`<g class="plane ${can}" data-tid="${pc.tid}" data-slot="${pc.slot}" transform="translate(${x},${y}) rotate(${rot})"><circle r="18" fill="transparent"/>${planePath(pc.done ? "#9E9E9E" : pl.color)}</g>`);
+        });
+      });
+      document.getElementById("sky").innerHTML = `
+        <rect width="520" height="520" fill="#fff"/>
+        ${bases}${sq.join("")}${arrows}
+        <circle cx="260" cy="260" r="22" fill="#FFD166" stroke="#F9A825" stroke-width="3"/>
+        <text x="260" y="264" text-anchor="middle" font-size="9" font-weight="700" fill="#5C3A21">Cafe</text>
+        ${planes.join("")}`;
+      document.querySelectorAll("#sky .plane.can").forEach((g) => {
+        g.addEventListener("click", () => {
+          const tid = g.getAttribute("data-tid");
+          const slot = +g.getAttribute("data-slot");
+          const pc = players[turn].pcs.find((p) => p.tid === tid && p.slot === slot);
+          if (pc) applyMove(pc);
+        });
+      });
+    };
+
+    const enterHomeIndex = (tid) => {
+      const st = TEAMS.find((t) => t.id === tid).start;
+      return (st + LOOP - 1) % LOOP;
+    };
+
+    const clone = (pc) => ({ tid: pc.tid, slot: pc.slot, zone: pc.zone, i: pc.i, done: pc.done });
+
+    const simulate = (pc, steps) => {
+      const p = clone(pc);
+      const path = [];
+      let left = steps;
+      if (p.zone === "hangar") {
+        p.zone = "loop";
+        p.i = TEAMS.find((t) => t.id === p.tid).start;
+        path.push({ zone: "loop", i: p.i });
+        left = steps;
+      }
+      while (left > 0) {
+        if (p.zone === "loop") {
+          const homeGate = enterHomeIndex(p.tid);
+          if (p.i === homeGate) {
+            p.zone = "home"; p.i = 0; left -= 1;
+            path.push({ zone: "home", i: 0 });
+            continue;
+          }
+          p.i = (p.i + 1) % LOOP;
+          path.push({ zone: "loop", i: p.i });
+          left -= 1;
+        } else if (p.zone === "home") {
+          const remain = HOME_LEN - p.i;
+          if (left === remain) {
+            p.done = true; p.zone = "hangar";
+            path.push({ zone: "done" });
+            left = 0;
+          } else if (left > remain) {
+            const extra = left - remain;
+            p.i = Math.max(0, HOME_LEN - extra);
+            path.push({ zone: "home", i: p.i, bounce: true });
+            left = 0;
+          } else {
+            p.i += left; left = 0;
+            path.push({ zone: "home", i: p.i });
+          }
+        } else return null;
+      }
+      return { p, path, launched: false };
+    };
+
+    const canEat = (mover, destList) => {
+      const foes = destList.filter((x) => x.tid !== mover.tid);
+      if (!foes.length) return true;
+      const by = {};
+      foes.forEach((f) => { by[f.tid] = (by[f.tid] || 0) + 1; });
+      return Object.values(by).every((n) => n <= 1);
+    };
+
+    const movable = (pc) => {
+      if (!dice || pc.done) return false;
+      if (players[turn].id !== pc.tid) return false;
+      const sim = simulate(pc, dice);
+      if (!sim) return false;
+      if (sim.p.done) return true;
+      const others = piecesAt(sim.p.zone, sim.p.i, pc);
+      return canEat(pc, others);
+    };
+
+    const eatAt = (zone, i, tid) => {
+      piecesAt(zone, i).forEach((pc) => {
+        if (pc.tid !== tid && !pc.done) {
+          const n = piecesAt(zone, i).filter((x) => x.tid === pc.tid).length;
+          if (n <= 1) {
+            pc.zone = "hangar"; pc.i = 0;
+          }
+        }
+      });
+    };
+
+    const eatFly = (from, to, tid) => {
+      const span = (to - from + LOOP) % LOOP;
+      for (let s = 1; s < span; s++) eatAt("loop", (from + s) % LOOP, tid);
+      eatAt("loop", to, tid);
+    };
+
+    const afterLand = (pc) => {
+      const extra = [];
+      if (pc.done || pc.zone !== "loop") return extra;
+      const col = sqColor(pc.i);
+      if (col !== pc.tid) return extra;
+      if (FLY[pc.i] != null) {
+        const dest = FLY[pc.i];
+        eatFly(pc.i, dest, pc.tid);
+        extra.push({ zone: "loop", i: dest, bonus: "fly" });
+        pc.i = dest;
+        for (let k = 0; k < 4; k++) {
+          pc.i = (pc.i + 1) % LOOP;
+          extra.push({ zone: "loop", i: pc.i, bonus: "jump" });
+        }
+        eatAt("loop", pc.i, pc.tid);
+        document.getElementById("hint").textContent = "Fly + jump 4 · 虛線飛再跳 4 格";
+        return extra;
+      }
+      for (let k = 0; k < 4; k++) {
+        pc.i = (pc.i + 1) % LOOP;
+        extra.push({ zone: "loop", i: pc.i, bonus: "jump" });
+      }
+      eatAt("loop", pc.i, pc.tid);
+      document.getElementById("hint").textContent = "Same colour! Jump 4 · 同色跳 4 格";
+      return extra;
+    };
+
+    const nextTurn = () => {
+      waitPick = false; moving = false; dice = 0;
+      if (extras > 0) {
+        extras -= 1;
+        document.getElementById("hint").textContent = "Roll again · 再擲（6）";
+        drawBoard();
+        return;
+      }
+      turn = (turn + 1) % players.length;
+      document.getElementById("hint").textContent = "";
+      drawTurn();
+      drawBoard();
+      say(players[turn].en + "'s turn.");
+    };
+
+    const checkWin = () => {
+      const pl = players[turn];
+      if (pl.pcs.every((p) => p.done)) {
+        document.getElementById("winEn").textContent = pl.en + " flies home!";
+        document.getElementById("winZh").textContent = pl.zh + " 四架飛機都到終點！";
+        document.getElementById("winModal").classList.add("on");
+        say(pl.en + " wins!");
+        return true;
+      }
+      return false;
+    };
+
+    const openQ = (then) => {
+      const q = makeQ();
+      q.opts = shuffle(q.opts);
+      document.getElementById("qEn").textContent = q.en;
+      document.getElementById("qZh").textContent = q.zh;
+      document.getElementById("qArt").innerHTML = q.art || "";
+      document.getElementById("qFb").textContent = "";
+      const box = document.getElementById("qOpts");
+      box.innerHTML = "";
+      q.opts.forEach((o) => {
+        const b = document.createElement("button");
+        b.className = "choice"; b.type = "button";
+        b.innerHTML = `<span class="ico">${o.ico || "☕"}</span><span class="c-txt">${o.en}<span class="c-zh">${o.zh}</span></span>`;
+        b.onclick = () => {
+          if (b.disabled) return;
+          if (o.ok) {
+            b.classList.add("ok");
+            box.querySelectorAll("button").forEach((x) => { x.disabled = true; });
+            document.getElementById("qFb").textContent = "Yes!";
+            say("Yes! " + o.en);
+            setTimeout(() => { document.getElementById("qModal").classList.remove("on"); then(); }, 800);
+          } else {
+            b.classList.add("bad");
+            document.getElementById("qFb").textContent = "Look again! 再睇一次！";
+            say("Look again.");
+            setTimeout(() => b.classList.remove("bad"), 650);
+          }
+        };
+        box.appendChild(b);
+      });
+      document.getElementById("qModal").classList.add("on");
+      say(q.speak || q.en);
+    };
+
+    const applyMove = (pc) => {
+      const sim = simulate(pc, dice);
+      if (!sim) return;
+      waitPick = false;
+      moving = true;
+      const frames = sim.path.length ? sim.path : [{ zone: sim.p.zone, i: sim.p.i }];
+      let f = 0;
+      const tick = () => {
+        if (f < frames.length) {
+          const fr = frames[f++];
+          if (fr.zone === "done") { pc.done = true; pc.zone = "hangar"; }
+          else { pc.done = false; pc.zone = fr.zone; pc.i = fr.i; }
+          drawBoard();
+          setTimeout(tick, 200);
+          return;
+        }
+        if (pc.zone === "loop") eatAt("loop", pc.i, pc.tid);
+        if (pc.zone === "home") eatAt("home", pc.i, pc.tid);
+        const bonus = afterLand(pc);
+        let b = 0;
+        const bonusTick = () => {
+          if (b < bonus.length) {
+            const fr = bonus[b++];
+            pc.zone = fr.zone; pc.i = fr.i;
+            drawBoard();
+            setTimeout(bonusTick, 180);
+            return;
+          }
+          if (pc.zone === "loop") eatAt("loop", pc.i, pc.tid);
+          drawBoard();
+          if (checkWin()) return;
+          openQ(nextTurn);
+        };
+        bonusTick();
+      };
+      tick();
+    };
+
+    const drawTurn = () => {
+      const p = players[turn];
+      document.getElementById("turnBar").textContent = p.en + " · " + p.zh + " 飛  ·  done " + p.pcs.filter((x) => x.done).length + "/4";
+    };
+
+    const roll = () => {
+      if (moving || waitPick || document.getElementById("qModal").classList.contains("on")) return;
+      moving = true;
+      dice = 1 + Math.floor(Math.random() * 6);
+      const d = document.getElementById("diceBtn");
+      d.textContent = String(dice);
+      d.classList.remove("spin"); void d.offsetWidth; d.classList.add("spin");
+      say(["one","two","three","four","five","six"][dice - 1]);
+      if (dice === 6) extras = Math.min(extras + 1, 2);
+      const opts = players[turn].pcs.filter(movable);
+      setTimeout(() => {
+        if (!opts.length) {
+          document.getElementById("hint").textContent = "Cannot move · 行唔到";
+          moving = false;
+          setTimeout(nextTurn, 1100);
+          return;
+        }
+        document.getElementById("hint").textContent = "";
+        const anyOut = opts.some((p) => p.zone !== "hangar");
+        if (opts.length === 1 || !anyOut) {
+          applyMove(opts[0]);
+          return;
+        }
+        waitPick = true; moving = false;
+        document.getElementById("hint").textContent = "Tap which plane to move · 揀郁邊隻棋";
+        drawBoard();
+      }, 450);
+    };
+
+    const renderPick = () => {
+      const box = document.getElementById("tokenBox");
+      box.innerHTML = "";
+      TEAMS.forEach((t) => {
+        const b = document.createElement("button");
+        b.className = "tok" + (players.some((p) => p.id === t.id) ? " on" : "");
+        b.type = "button";
+        b.innerHTML = `<svg viewBox="-16 -16 32 32">${planePath(t.color)}</svg><div class="en" style="font-size:1.1rem;margin:4px 0 0">${t.en}</div><div class="zh" style="margin:0">${t.zh}</div>`;
+        b.onclick = () => {
+          const i = players.findIndex((p) => p.id === t.id);
+          if (i >= 0) players.splice(i, 1);
+          else if (players.length < 4) {
+            const pcs = [0,1,2,3].map((slot) => ({ tid: t.id, slot, zone: "hangar", i: 0, done: false }));
+            players.push({ id: t.id, en: t.en, zh: t.zh, color: t.color, pcs });
+          }
+          renderPick();
+        };
+        box.appendChild(b);
+      });
+      document.getElementById("pickCount").textContent = players.length + " / 2–4";
+      document.getElementById("startBtn").disabled = players.length < 2;
+    };
+
+    document.getElementById("goPick").onclick = () => { players = []; renderPick(); show("pick"); };
+    document.getElementById("startBtn").onclick = () => {
+      turn = 0; dice = 0; extras = 0; waitPick = false; moving = false;
+      players.forEach((pl) => pl.pcs.forEach((pc) => { pc.zone = "hangar"; pc.i = 0; pc.done = false; }));
+      show("play"); drawTurn(); drawBoard();
+      document.getElementById("hint").textContent = "Roll · 擲骰（1–6 都作出機）";
+      say(players[0].en + "'s turn.");
+    };
+    document.getElementById("rollBtn").onclick = () => roll();
+    document.getElementById("diceBtn").onclick = () => roll();
+    document.getElementById("replayBtn").onclick = () => { if (lastSpeak) say(lastSpeak); };
+    document.getElementById("againBtn").onclick = () => {
+      document.getElementById("winModal").classList.remove("on");
+      show("title");
+    };
+    document.getElementById("speakBtn").onclick = () => say("Sunshine Cafe flying chess");
+    document.getElementById("muteBtn").onclick = () => {
+      muted = !muted;
+      document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔈";
+      if (muted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  </script>
+</body>
+</html>
